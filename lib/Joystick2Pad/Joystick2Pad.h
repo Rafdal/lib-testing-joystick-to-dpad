@@ -5,7 +5,7 @@
 class Joystick2Pad
 {
 private:
-    
+
 public:
     Joystick2Pad();
     ~Joystick2Pad();
