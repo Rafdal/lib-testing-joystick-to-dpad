@@ -13,7 +13,8 @@ void setup()
 {
 	Serial.begin(230400);
 
-	// ! UP
+	pad.up.setLongPressTime(1200); // 1.2s
+
 	pad.up.onClick([](){
 		PRINT("Click")
 	});

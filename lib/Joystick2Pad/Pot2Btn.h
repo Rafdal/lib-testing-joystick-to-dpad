@@ -21,12 +21,13 @@ private:
     };
 
     uint8_t _pin;
+    bool _state;
     bool _lastState;
     event_callback_t _onClick, _onRelease;
 
     // on Long Press
     uint8_t _LPState; // Long Press state
-    uint8_t _longPressTime = 10; // time for a long press
+    uint8_t _longPressTime = 10; // time for a long press (It's in deciseconds, [10ds = 1s])
     unsigned long _lastMs; // Last ms pressed
     event_callback_t _onLP;
 
@@ -41,6 +42,8 @@ private:
     void _schmitt(bool* lastOutput, int inputPot, int lowUmbral, int highUmbral)
     {
         bool inverted = false;
+
+        // Use a negative value in highUmbral when the output is inverted
         if (highUmbral<0)
         {
             highUmbral *= -1;
@@ -48,22 +51,17 @@ private:
         }
         
         if (inputPot > highUmbral && !*lastOutput^inverted)
-        {
-            *lastOutput = true^inverted;
-        }
+            {*lastOutput = true^inverted;}
         else if (inputPot < lowUmbral && *lastOutput^inverted)
-        {
-            *lastOutput = false^inverted;
-        }
+            {*lastOutput = false^inverted;}
     }
 
 public:
-    bool state;
     Pot2Btn() {}
     ~Pot2Btn() {}
 
     void begin(uint8_t pin, int lowUmbral, int highUmbral);
-    void read();
+    bool read();
 
     void onRelease(event_callback_t event);
     void onClick(event_callback_t event);
@@ -79,14 +77,14 @@ void Pot2Btn::begin(uint8_t pin, int lowUmbral, int highUmbral)
     _lowUmbral  = lowUmbral;
 }
 
-void Pot2Btn::read()
+bool Pot2Btn::read()
 {
-    _schmitt(&state, analogRead(_pin), _lowUmbral, _highUmbral);
+    _schmitt(&_state, analogRead(_pin), _lowUmbral, _highUmbral);
 
     // State changed
-    if (_lastState != state)
+    if (_lastState != _state)
     {
-        if (state && _LPState != LONG_PRESSED)
+        if (_state && _LPState != LONG_PRESSED)
         {
             if (_onClick != NULL)            
                 (*_onClick)();
@@ -94,7 +92,7 @@ void Pot2Btn::read()
             DEBUG("Click")
             _LPState = CLICK;
         }
-        if (!state && _LPState != LONG_PRESSED)
+        if (!_state && _LPState != LONG_PRESSED)
         {
             if (_onRelease != NULL)
                 (*_onRelease)();
@@ -105,14 +103,14 @@ void Pot2Btn::read()
         _lastMs = millis();
     }
 
-    // Reset state
-    if (_LPState == LONG_PRESSED && !(_lastState || state))
+    // Reset LPState
+    if (_LPState == LONG_PRESSED && !_state)
     {
         _LPState = RELEASED;
     }
     
     
-    if (_lastState && state)
+    if (_lastState && _state)
     {
         if (millis() - _lastMs > _longPressTime*100)
         {
@@ -144,7 +142,8 @@ void Pot2Btn::read()
     }
     
     
-    _lastState = state; // !! ESTO SIEMPRE AL FINAL
+    _lastState = _state;
+    return _state;
 }
 
 void Pot2Btn::onClick(event_callback_t event)
