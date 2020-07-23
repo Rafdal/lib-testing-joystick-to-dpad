@@ -5,8 +5,8 @@
 
 typedef void (*event_callback_t)(void);
 
-#define DEBUG(Str) Serial.println(F(Str));
-#ifndef DEBUG
+// #define DEBUG(Str) Serial.println(F(Str)); // Uncomment for debug
+#ifndef DEBUG   
 #define DEBUG(Str)
 #endif
 
@@ -98,27 +98,27 @@ void Pot2Btn::read()
         {
             if (_onRelease != NULL)
                 (*_onRelease)();
-                
+
             DEBUG("Release")
             _LPState = RELEASED;
         }
         _lastMs = millis();
     }
 
+    // Reset state
     if (_LPState == LONG_PRESSED && !(_lastState || _state))
     {
         _LPState = RELEASED;
     }
     
     
-
     if (_lastState && _state)
     {
         if (millis() - _lastMs > _longPressTime*100)
         {
             switch (_LPState)
             {
-            case RELEASED:
+            case CLICK:
                 {
                     _LPState = LONG_PRESSED;
                     DEBUG("LP")
@@ -128,12 +128,12 @@ void Pot2Btn::read()
                 break;
             case LONG_PRESSED:
                 {
+                    DEBUG("whileLP")
                     if (_whileLP != NULL)
                     {
                         if (_whileLPInterval != 0 && millis() - _LPInterval_lastMs < _whileLPInterval)
                             {break;}
                         _LPInterval_lastMs = millis();
-                        DEBUG("whileLP")
                         (*_whileLP)();
                     }
                 }
